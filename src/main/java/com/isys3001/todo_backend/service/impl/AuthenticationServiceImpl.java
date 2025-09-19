@@ -37,7 +37,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .build();
 
         userRepository.save(user);
-        return "User registered";
+        return "User registered successfully";
     }
 
     @Override
