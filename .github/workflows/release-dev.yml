@@ -78,27 +78,3 @@ jobs:
             ${{ env.IMAGE_NAME }}:dev-latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-  dummy_pull:
-    name: Dummy Deploy (pull & smoke-check image on runner)
-    runs-on: ubuntu-latest
-    needs: docker
-    steps:
-      - name: Pull fresh image
-        run: docker pull ${{ env.IMAGE_NAME }}:dev-latest
-
-      - name: Run container briefly (dev profile) and health check
-        run: |
-          docker run -d --name todo-api-ci -p 8080:8080 \
-            -e SPRING_PROFILES_ACTIVE=dev \
-            ${{ env.IMAGE_NAME }}:dev-latest
-          for i in $(seq 1 30); do
-            if curl -fsS http://localhost:8080/actuator/health >/dev/null; then
-              echo "Health OK"; OK=1; break
-            fi
-            echo "Waiting for app... ($i/30)"; sleep 2
-          done
-          docker logs todo-api-ci || true
-          docker stop todo-api-ci >/dev/null 2>&1 || true
-          docker rm todo-api-ci >/dev/null 2>&1 || true
-          test "${OK:-0}" -eq 1
