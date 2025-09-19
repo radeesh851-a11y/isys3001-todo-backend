@@ -10,13 +10,13 @@ concurrency:
   group: dev-release
   cancel-in-progress: false
 
+permissions:
+  contents: read
+  packages: write   # needed for GHCR push
+
 env:
   JAVA_VERSION: '21'
   IMAGE_NAME: ghcr.io/${{ github.repository }}/todo-api
-
-permissions:
-  contents: read
-  packages: write     # needed to push to GHCR
 
 jobs:
   verify:
@@ -28,20 +28,21 @@ jobs:
       DB_USERNAME: ${{ secrets.DB_USERNAME }}
       DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
 
-    steps:
-      - uses: actions/checkout@v4
+    # 👇 expose the computed tag as a job output
+    outputs:
+      image_tag: ${{ steps.meta.outputs.tag }}
 
-      - uses: actions/setup-java@v4
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
           cache: maven
 
-      # ✅ Gate: fail here if there are any code/test errors
-      # If your tests need a DB, either:
-      #  A) rely on H2/Testcontainers (preferred), or
-      #  B) inject real DB secrets as env (optional)
-      # Example (A): no secrets needed
       - name: Build & Test
         run: mvn -B -DskipTests=false verify
 
@@ -53,8 +54,10 @@ jobs:
     name: Build & Push Docker (GHCR)
     runs-on: ubuntu-latest
     needs: verify
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Login to GHCR
         uses: docker/login-action@v3
@@ -71,7 +74,7 @@ jobs:
         with:
           push: true
           tags: |
-            ${{ env.IMAGE_NAME }}:${{ needs.verify.outputs.tag }}
+            ${{ env.IMAGE_NAME }}:${{ needs.verify.outputs.image_tag }}
             ${{ env.IMAGE_NAME }}:dev-latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -80,18 +83,17 @@ jobs:
     name: Dummy Deploy (pull & smoke-check image on runner)
     runs-on: ubuntu-latest
     needs: docker
+
     steps:
       - name: Pull fresh image
         run: docker pull ${{ env.IMAGE_NAME }}:dev-latest
 
-      # Optional: quick sanity that the image can start with a lightweight profile.
-      # Requires you have application-dev.yml using H2 so it can boot without external DB.
+      # Optional: quick run using dev profile (H2) to ensure it boots.
       - name: Run container briefly (dev profile) and health check
         run: |
           docker run -d --name todo-api-ci -p 8080:8080 \
             -e SPRING_PROFILES_ACTIVE=dev \
-            ${{ env.IMAGE_NAME }}:dev-latest
-          # wait up to ~60s for app to boot
+            ${{ env.IMAGE_NAME }}:${{ needs.verify.outputs.image_tag }}
           for i in $(seq 1 30); do
             if curl -fsS http://localhost:8080/actuator/health >/dev/null; then
               echo "Health OK"; OK=1; break
