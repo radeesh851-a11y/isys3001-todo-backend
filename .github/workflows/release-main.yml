@@ -17,7 +17,7 @@ permissions:
 env:
   JAVA_VERSION: '21'
   IMAGE_NAME: ghcr.io/${{ github.repository }}/todo-api
-  DOCKER_CONTEXT: ./isys3001-todo-backend
+  BUILD_CONTEXT: ./isys3001-todo-backend
   DOCKERFILE_PATH: ./isys3001-todo-backend/Dockerfile
 
 jobs:
