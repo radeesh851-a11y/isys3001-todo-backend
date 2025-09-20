@@ -2,8 +2,7 @@ name: PR CI pre build check
 
 on:
   pull_request:
-    branches:
-      - dev
+    branches: [ dev ]
 
 jobs:
   build-test:
@@ -21,5 +20,5 @@ jobs:
           java-version: '21'
           cache: 'maven'
 
-      - name: Build & Test
+      - name: Build & Test (H2 test profile)
         run: mvn -B -DskipTests=false verify
