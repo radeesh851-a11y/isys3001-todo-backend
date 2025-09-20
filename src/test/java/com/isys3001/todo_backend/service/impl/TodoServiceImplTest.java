@@ -180,8 +180,6 @@ class TodoServiceImplTest {
                 .hasMessageContaining("Todo not found");
     }
 
-    // ---------- helpers ----------
-
     private static Todo todo(Long id, String title, String desc, boolean completed, User owner) {
         var t = new Todo();
         t.setId(id);
