@@ -1,4 +1,4 @@
-name: PR CI
+name: PR CI pre build check
 
 on:
   pull_request:
