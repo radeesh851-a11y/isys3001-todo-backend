@@ -17,8 +17,8 @@ permissions:
 env:
   JAVA_VERSION: '21'
   IMAGE_NAME: ghcr.io/${{ github.repository }}/todo-api
-  BUILD_CONTEXT: ./isys3001-todo-backend      # renamed to avoid conflict with Docker's DOCKER_CONTEXT
-  DOCKERFILE_PATH: ./isys3001-todo-backend/Dockerfile
+  BUILD_CONTEXT: .
+  DOCKERFILE_PATH: ./Dockerfile
 
 jobs:
   verify:
@@ -50,7 +50,6 @@ jobs:
         id: sha
         run: echo "tag=prod-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
 
-      # If this is a tag like v1.2.3, produce extra tags 1.2.3 and 1.2
       - name: Parse semver tag (if any)
         id: ver
         run: |
@@ -68,7 +67,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: verify
     env:
-      DOCKER_CONTEXT: default   # ensure Docker uses the default context
+      DOCKER_CONTEXT: default
     steps:
       - uses: actions/checkout@v4
 
