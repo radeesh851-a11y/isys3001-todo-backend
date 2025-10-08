@@ -8,20 +8,25 @@ import com.isys3001.todo_backend.repositories.UserRepository;
 import com.isys3001.todo_backend.service.AuthenticationService;
 import com.isys3001.todo_backend.utils.JwtUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.XSlf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.logging.Logger;
+
 @Service
 @RequiredArgsConstructor
+@XSlf4j
 public class AuthenticationServiceImpl implements AuthenticationService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authManager;
     private final JwtUtil jwtUtil;
+    private final Logger logger;
 
     @Override
     @Transactional
@@ -29,6 +34,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         userRepository.findByEmail(req.getEmail()).ifPresent(u -> {
             throw new RuntimeException("Email already registered");
         });
+
+        logger.info("User registered successfully");
 
         User user = User.builder()
                 .email(req.getEmail())
@@ -42,6 +49,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     public String login(LoginRequest req) {
+        logger.info("User logged in successfully");
         authManager.authenticate(
                 new UsernamePasswordAuthenticationToken(req.getEmail(), req.getPassword()));
         return jwtUtil.generateToken(req.getEmail());
